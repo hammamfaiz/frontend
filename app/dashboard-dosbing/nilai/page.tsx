@@ -1,121 +1,99 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { jwtDecode } from 'jwt-decode';
+import Cookies from 'js-cookie';
 
-// Data Dummy
-const penilaianData: {
-  id: number;
-  NIM: string;
-  id_program_mbkm: number;
-  nilai: string;
-  file_nilai_url: string | null;
-}[] = [
-  {
-    id: 1,
-    NIM: '12345678',
-    id_program_mbkm: 1,
-    nilai: '',
-    file_nilai_url: null
-  },
-  {
-    id: 2,
-    NIM: '87654321',
-    id_program_mbkm: 2,
-    nilai: '',
-    file_nilai_url: null
-  }
-];
+interface Penilaian {
+  id_konversi_nilai: number;
+  id_berkas_penilaian: number;
+  nilai_akhir: number;
+  grade: string;
+  nama_berkas: string;
+}
 
-const mahasiswaData = [
-  {
-    NIM: '12345678',
-    nama_mahasiswa: 'John Doe',
-    semester: 5,
-    id_program_mbkm: 1,
-    NIP_dosbing: '987654321'
-  },
-  {
-    NIM: '87654321',
-    nama_mahasiswa: 'Jane Smith',
-    semester: 7,
-    id_program_mbkm: 2,
-    NIP_dosbing: '123456789'
-  }
-];
-
-const programMBKMData = [
-  {
-    id: 1,
-    nama_program: 'Magang di Perusahaan ABC',
-    deskripsi: 'Program magang selama 6 bulan di perusahaan ABC.'
-  },
-  {
-    id: 2,
-    nama_program: 'Studi Independen Data Science',
-    deskripsi: 'Program studi independen selama 6 bulan tentang Data Science.'
-  }
-];
-
-// Komponen Utama
 export default function PenilaianProgramMBKM() {
-  const [penilaians, setPenilaians] = useState<typeof penilaianData>([]);
-  const [mahasiswa, setMahasiswa] = useState<typeof mahasiswaData>([]);
-  const [programMBKM, setProgramMBKM] = useState<typeof programMBKMData>([]);
-  const [selectedMahasiswa, setSelectedMahasiswa] = useState<
-    (typeof mahasiswaData)[0] | null
-  >(null);
-  const [selectedPenilaian, setSelectedPenilaian] = useState<
-    (typeof penilaianData)[0] | null
-  >(null);
-  const [nilai, setNilai] = useState<string>('');
-  const [fileNilai, setFileNilai] = useState<File | null>(null);
+  const [penilaians, setPenilaians] = useState<Penilaian[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedPenilaian, setSelectedPenilaian] = useState<Penilaian | null>(null);
+  const [nilaiAkhir, setNilaiAkhir] = useState<number>(0);
+  const [grade, setGrade] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setPenilaians(penilaianData);
-    setMahasiswa(mahasiswaData);
-    setProgramMBKM(programMBKMData);
+    const token = Cookies.get('token');
+
+    if (!token) {
+      setError('Token tidak ditemukan');
+      return;
+    }
+
+    try {
+      const decodedToken = jwtDecode<{ NIP_dosbing: string }>(token);
+      console.log('NIP dari token:', decodedToken.NIP_dosbing);
+
+      const fetchPenilaianData = async () => {
+        try {
+          const response = await fetch(
+            'https://backend-si-mbkm.vercel.app/api/konversi-nilai',
+            {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (response.ok) {
+            const data = await response.json();
+            setPenilaians(data);
+          } else {
+            console.error('Failed to fetch data:', response.statusText);
+            setError('Gagal mengambil data penilaian');
+          }
+        } catch (error) {
+          console.error('Error:', error);
+          setError('Terjadi kesalahan saat mengambil data');
+        }
+      };
+
+      fetchPenilaianData();
+    } catch (err) {
+      console.error('Kesalahan decoding token:', err);
+      setError('Token tidak valid');
+    }
   }, []);
 
-  const handleEditPenilaian = (penilaian: (typeof penilaianData)[0]) => {
+  const handleEditPenilaian = (penilaian: Penilaian) => {
     setSelectedPenilaian(penilaian);
-    setNilai(penilaian.nilai);
-    setFileNilai(null);
+    setNilaiAkhir(penilaian.nilai_akhir);
+    setGrade(penilaian.grade);
     setIsModalOpen(true);
   };
 
   const handleSavePenilaian = () => {
-    setPenilaians((prevState) =>
-      prevState.map((penilaian) =>
-        penilaian.id === selectedPenilaian?.id
-          ? {
-              ...penilaian,
-              nilai: nilai,
-              file_nilai_url: fileNilai
-                ? URL.createObjectURL(fileNilai)
-                : penilaian.file_nilai_url
-            }
-          : penilaian
-      )
-    );
+    // Implement saving logic if needed
     setIsModalOpen(false);
     alert('Penilaian berhasil disimpan!');
-  };
-
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setFileNilai(e.target.files[0]);
-    }
   };
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(e.target.value);
   };
 
-  const filteredMahasiswa = mahasiswa.filter((mhs) =>
-    mhs.nama_mahasiswa.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredPenilaians = penilaians.filter((penilaian) =>
+    penilaian.nama_berkas.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  if (error) {
+    return <p className="text-red-500">{error}</p>;
+  }
+
+  if (!Cookies.get('token')) {
+    return <p>Memeriksa autentikasi...</p>;
+  }
 
   return (
     <div className="p-6">
@@ -124,7 +102,7 @@ export default function PenilaianProgramMBKM() {
       <div className="mb-4">
         <input
           type="text"
-          placeholder="Cari mahasiswa..."
+          placeholder="Cari berkas..."
           value={searchQuery}
           onChange={handleSearchChange}
           className="w-full rounded border border-gray-300 p-2"
@@ -132,97 +110,67 @@ export default function PenilaianProgramMBKM() {
       </div>
 
       <section>
-        <h2 className="mb-4 text-xl font-semibold">Tabel Penilaian</h2>
-        <table className="w-full border-collapse border border-gray-300">
-          <thead>
-            <tr>
-              <th className="border border-gray-300 px-4 py-2">No</th>
-              <th className="border border-gray-300 px-4 py-2">Mahasiswa</th>
-              <th className="border border-gray-300 px-4 py-2">Program</th>
-              <th className="border border-gray-300 px-4 py-2">Nilai</th>
-              <th className="border border-gray-300 px-4 py-2">File Nilai</th>
-              <th className="border border-gray-300 px-4 py-2">Aksi</th>
-            </tr>
-          </thead>
-          <tbody>
-            {penilaians.map((penilaian, index) => {
-              const mahasiswaInfo = mahasiswa.find(
-                (mhs) => mhs.NIM === penilaian.NIM
-              );
-              const programInfo = programMBKM.find(
-                (program) => program.id === penilaian.id_program_mbkm
-              );
-              return (
-                filteredMahasiswa.some((mhs) => mhs.NIM === penilaian.NIM) && (
-                  <tr key={penilaian.id}>
-                    <td className="border border-gray-300 px-4 py-2">
-                      {index + 1}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2">
-                      <button
-                        onClick={() =>
-                          setSelectedMahasiswa(mahasiswaInfo || null)
-                        }
-                        className="text-blue-500 underline"
-                      >
-                        {mahasiswaInfo?.nama_mahasiswa || 'Tidak Ditemukan'}
-                      </button>
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2">
-                      {programInfo?.nama_program || 'Tidak Ditemukan'}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2">
-                      {penilaian.nilai || 'Belum dinilai'}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2">
-                      {penilaian.file_nilai_url ? (
-                        <a
-                          href={penilaian.file_nilai_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-500 underline"
-                        >
-                          Lihat File
-                        </a>
-                      ) : (
-                        'Belum ada file'
-                      )}
-                    </td>
-                    <td className="border border-gray-300 px-4 py-2">
-                      <button
-                        className="rounded bg-blue-500 px-4 py-2 text-white"
-                        onClick={() => handleEditPenilaian(penilaian)}
-                      >
-                        Edit
-                      </button>
-                    </td>
-                  </tr>
-                )
-              );
-            })}
-          </tbody>
-        </table>
-      </section>
+  <h2 className="mb-4 text-xl font-semibold">Tabel Penilaian</h2>
+  <table className="w-full border-collapse border border-gray-300">
+    <thead>
+      <tr>
+        <th className="border border-gray-300 px-4 py-2">No</th>
+        <th className="border border-gray-300 px-4 py-2">Nama Berkas</th>
+        <th className="border border-gray-300 px-4 py-2">Nilai Akhir</th>
+        <th className="border border-gray-300 px-4 py-2">Grade</th>
+        <th className="border border-gray-300 px-4 py-2">Aksi</th>
+      </tr>
+    </thead>
+    <tbody>
+      {filteredPenilaians.map((penilaian, index) => (
+        <tr key={penilaian.id_konversi_nilai}>
+          <td className="border border-gray-300 px-4 py-2">{index + 1}</td>
+          <td className="border border-gray-300 px-4 py-2">
+            <button
+              className="rounded bg-blue-500 px-4 py-2 text-white"
+              
+              onClick={() => window.open(penilaian.nama_berkas, '_blank')}
+            >
+              Detail
+            </button>
+          </td>
+          <td className="border border-gray-300 px-4 py-2">{penilaian.nilai_akhir}</td>
+          <td className="border border-gray-300 px-4 py-2">{penilaian.grade}</td>
+          <td className="border border-gray-300 px-4 py-2">
+            <button
+              className="rounded bg-blue-500 px-4 py-2 text-white"
+              onClick={() => handleEditPenilaian(penilaian)}
+            >
+              Edit
+            </button>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</section>
 
-      {isModalOpen && (
+
+
+      {isModalOpen && selectedPenilaian && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="w-96 rounded bg-white p-6 shadow-md">
             <h3 className="mb-4 text-xl font-semibold">Edit Penilaian</h3>
             <div className="mb-4">
-              <label className="mb-2 block">Nilai:</label>
+              <label className="mb-2 block">Nilai Akhir:</label>
               <input
-                type="text"
-                value={nilai}
-                onChange={(e) => setNilai(e.target.value)}
+                type="number"
+                value={nilaiAkhir}
+                onChange={(e) => setNilaiAkhir(Number(e.target.value))}
                 className="w-full rounded border border-gray-300 p-2"
-                placeholder="Masukkan nilai"
               />
             </div>
             <div className="mb-4">
-              <label className="mb-2 block">Upload File Nilai:</label>
+              <label className="mb-2 block">Grade:</label>
               <input
-                type="file"
-                onChange={handleFileChange}
+                type="text"
+                value={grade}
+                onChange={(e) => setGrade(e.target.value)}
                 className="w-full rounded border border-gray-300 p-2"
               />
             </div>
@@ -238,35 +186,6 @@ export default function PenilaianProgramMBKM() {
                 className="rounded bg-gray-300 px-4 py-2 text-black"
               >
                 Batal
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {selectedMahasiswa && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="rounded bg-white p-6 shadow-md">
-            <h3 className="mb-4 text-xl font-semibold">Informasi Mahasiswa</h3>
-            <p>
-              <strong>NIM:</strong> {selectedMahasiswa.NIM}
-            </p>
-            <p>
-              <strong>Nama:</strong> {selectedMahasiswa.nama_mahasiswa}
-            </p>
-            <p>
-              <strong>Semester:</strong> {selectedMahasiswa.semester}
-            </p>
-            <p>
-              <strong>NIP Dosen Pembimbing:</strong>{' '}
-              {selectedMahasiswa.NIP_dosbing}
-            </p>
-            <div className="mt-4 flex justify-end">
-              <button
-                onClick={() => setSelectedMahasiswa(null)}
-                className="rounded bg-gray-300 px-4 py-2 text-black"
-              >
-                Tutup
               </button>
             </div>
           </div>
