@@ -14,7 +14,6 @@ const API_BASE_URL = 'https://backend-si-mbkm.vercel.app/api';
 interface PendaftaranMBKM {
   id_pendaftaran_mbkm: number;
   NIM: number;
-  NIP_dosen: string;
   tanggal: string;
   nama_berkas: string;
   id_program_mbkm: number;
