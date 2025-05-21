@@ -11,10 +11,10 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 
-import { useTaskStore } from '@/lib/store';
+// import { useTaskStore } from '@/lib/store';
 
 export default function NewSectionDialog() {
-  const addCol = useTaskStore((state) => state.addCol);
+  // const addCol = useTaskStore((state) => state.addCol);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -24,7 +24,8 @@ export default function NewSectionDialog() {
     const { title } = Object.fromEntries(formData);
 
     if (typeof title !== 'string') return;
-    addCol(title);
+    // addCol(title);
+    console.log(title);
   };
 
   return (

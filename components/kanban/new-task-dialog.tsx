@@ -13,10 +13,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '../ui/textarea';
 
-import { useTaskStore } from '@/lib/store';
+// import { useTaskStore } from '@/lib/store';
 
 export default function NewTaskDialog() {
-  const addTask = useTaskStore((state) => state.addTask);
+  // const addTask = useTaskStore((state) => state.addTask);
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -26,7 +26,8 @@ export default function NewTaskDialog() {
     const { title, description } = Object.fromEntries(formData);
 
     if (typeof title !== 'string' || typeof description !== 'string') return;
-    addTask(title, description);
+    // addTask(title, description);
+    console.log(title, description);
   };
 
   return (

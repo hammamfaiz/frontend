@@ -1,4 +1,4 @@
-import { Task } from '@/lib/store';
+// import { Task } from '@/lib/store';
 import { useDndContext, type UniqueIdentifier } from '@dnd-kit/core';
 import { SortableContext, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -25,7 +25,7 @@ export interface ColumnDragData {
 
 interface BoardColumnProps {
   column: Column;
-  tasks: Task[];
+  tasks: any[];
   isOverlay?: boolean;
 }
 
