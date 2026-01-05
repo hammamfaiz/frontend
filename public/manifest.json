@@ -1,0 +1,42 @@
+{
+  "name": "MBKM Undip Dashboard",
+  "short_name": "MBKM Undip",
+  "description": "Dashboard for MBKM (Merdeka Belajar Kampus Merdeka) Undip program management",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/logo/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["education", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "short_name": "Dashboard",
+      "description": "View main dashboard",
+      "url": "/dashboard",
+      "icons": [{ "src": "/logo/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Program",
+      "short_name": "Program",
+      "description": "View MBKM programs",
+      "url": "/dashboard/program",
+      "icons": [{ "src": "/logo/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
